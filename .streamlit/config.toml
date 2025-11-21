@@ -1,0 +1,13 @@
+[theme]
+primaryColor = "#000000"        # 主色：纯黑
+backgroundColor = "#FFFFFF"     # 背景：纯白
+secondaryBackgroundColor = "#F7F7F7" # 次要背景：极浅的灰 (用于侧边栏)
+textColor = "#000000"           # 文字：纯黑
+font = "sans serif"
+
+[server]
+enableCORS = false
+enableXsrfProtection = false
+
+[browser]
+gatherUsageStats = false
