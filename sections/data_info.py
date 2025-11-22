@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 
 def show(df):
-    st.markdown("## 🧹 Data Engineering Info")
+    st.markdown("## :material/data_info_alert: Data Engineering Info")
     st.markdown("To ensure high-quality analysis, we performed rigorous cleaning on the raw dataset, handling inconsistent units (MB/GB), date formats, and dirty strings.")
     
     st.markdown("### 1. Handling Missing Data (The 'Unknown' Problem)")
@@ -47,7 +47,7 @@ def show(df):
     
     st.markdown("---")
     
-    with st.expander("📚 Domain Knowledge: Why is data missing?", expanded=False):
+    with st.expander("Domain Knowledge: Why is data missing?", expanded=False, icon=":material/help:"):
         st.markdown("""
         **1. The Concept of TDP:** In the 80s/90s, cards consumed negligible power (< 5 Watts), so TDP wasn't a tracked metric until the GeForce 256 (1999).
         

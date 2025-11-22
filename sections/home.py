@@ -1,57 +1,107 @@
 import streamlit as st
-# ❌ 不再导入 render_green_box, render_header，因为 ui.py 里已经删了
-# ✅ 只导入需要的工具
 from utils.ui import load_css 
 
 def show(df):
-    # 1. 顶部通知框 
-    # 直接用 st.success，因为我们在 CSS 里强制设为了直角，它现在就是一个锋利的绿色方块
-    st.success("👋 **Project Update:** GPU-FINDER is growing every day! We analyze 3000+ GPUs to reveal hardware trends.")
     
-    # 2. 主标题 (使用原生 Markdown，CSS 会让字体变硬朗)
-    st.markdown("# 🚀 GPU Evolution: A Data Storytelling Tool")
-    st.markdown("### Analyzing 40 years of graphics hardware history (1986-2026)")
+    # 2. 主标题
+    st.markdown("# GPU EVOLUTION: A DATA STORY")
+    st.markdown("### ANALYZING THE LIMITS OF SILICON PHYSICS & ECONOMICS")
     st.markdown("---")
 
     # 3. 核心内容区
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        st.markdown("### 🎯 What is this tool?")
+        st.markdown("### :material/ads_click: OBJECTIVE")
         st.markdown("""
-        This is an interactive dashboard built with **Streamlit** to explore the evolution of Graphics Processing Units (GPUs).
+        This dashboard deconstructs the history of Graphics Processing Units (GPUs) to validate industry laws and expose hidden bottlenecks.
         
-        **Key Features:**
-        * **Moore's Law Validator:** See if transistor density is still doubling.
-        * **Efficiency Tracker:** Analyze Performance per Watt trends.
-        * **AI Segmentation:** Use Machine Learning to group GPUs by specs.
+        **CORE MODULES:**
+        * **MOORE'S LAW:** Tracking transistor density vs. physical limits.
+        * **POWER WALL:** The end of Dennard Scaling and the rise of TDP.
+        * **ECONOMIC WALL:** Why computing is getting expensive again.
         """)
         
-        # 提示框
-        st.info("👈 **Get Started:** Use the TOP NAVIGATION bar to switch to 'Analysis Tools'.")
+        st.info("**START:** CLICK 'ANALYSIS TOOLS' IN THE TOP MENU.", icon=":material/line_start_arrow:")
 
     with col2:
-        # 数据集统计
-        st.markdown("### 📊 Dataset Stats")
-        # 原生 Metric 现在也会被 CSS 变成直角
-        st.metric("Total GPUs", len(df))
-        st.metric("Time Span", "1986 - 2026")
-        st.metric("Brands", f"{df['Brand'].nunique()} (Nvidia, AMD, Intel...)")
+        st.markdown("### :material/query_stats: STATS")
+        # Metric 会自动适配我们的黑白 CSS，看起来非常酷
+        st.metric("TOTAL GPUs", len(df))
+        st.metric("TIME SPAN", "1986 - 2026")
+        st.metric("VENDORS", f"{df['Brand'].nunique()}")
 
-    # 4. 底部流程图
-    st.markdown("### 🛠️ How it works")
-    st.graphviz_chart("""
-        digraph G {
-            rankdir=LR;
-            // 设置节点为矩形，字体为无衬线，制造工业感
-            node [shape=rect, style="filled,bold", fillcolor="white", color="black", penwidth=2, fontname="Helvetica"];
-            edge [penwidth=2];
-            
-            Raw [label="Raw Dataset\n(CSV)"];
-            Clean [label="Data Cleaning\n(Pandas)"];
-            Viz [label="Visualization\n(Plotly)"];
-            App [label="Interactive App\n(Streamlit)"];
-            
-            Raw -> Clean -> Viz -> App;
-        }
-    """)
+    # 4. 替代 Graphviz 的“数字流程卡片”
+    st.markdown("---")
+    st.markdown("### :material/azm: METHODOLOGY")
+    
+    # 使用 HTML/CSS 创建 4 列纯 CSS 卡片，不使用任何图片或 Emoji
+    # 这段 HTML 代码会生成 4 个带边框的盒子，里面有巨大的数字编号
+    st.markdown("""
+    <style>
+    .step-card {
+        border: 2px solid black;
+        padding: 20px;
+        height: 100%;
+        background: white;
+        transition: transform 0.2s;
+    }
+    .step-card:hover {
+        background: black;
+        color: white;
+        cursor: default;
+    }
+    .step-num {
+        font-family: 'Oswald', sans-serif;
+        font-size: 40px;
+        font-weight: bold;
+        opacity: 0.3; /* 数字半透明，显高级 */
+        margin-bottom: 10px;
+    }
+    .step-title {
+        font-family: 'Oswald', sans-serif;
+        font-size: 18px;
+        font-weight: bold;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+    }
+    .step-desc {
+        font-family: 'Roboto', sans-serif;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+    /* 悬停时数字变白 */
+    .step-card:hover .step-num { color: white; opacity: 0.8; }
+    </style>
+
+    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 200px;">
+            <div class="step-card">
+                <div class="step-num">01</div>
+                <div class="step-title">Raw Data</div>
+                <div class="step-desc">Ingesting unstructured CSV specs from TechPowerUp database.</div>
+            </div>
+        </div>
+        <div style="flex: 1; min-width: 200px;">
+            <div class="step-card">
+                <div class="step-num">02</div>
+                <div class="step-title">Processing</div>
+                <div class="step-desc">Cleaning regex, handling units, and extracting features.</div>
+            </div>
+        </div>
+        <div style="flex: 1; min-width: 200px;">
+            <div class="step-card">
+                <div class="step-num">03</div>
+                <div class="step-title">Visualization</div>
+                <div class="step-desc">Plotly interactive charts with regression analysis.</div>
+            </div>
+        </div>
+        <div style="flex: 1; min-width: 200px;">
+            <div class="step-card">
+                <div class="step-num">04</div>
+                <div class="step-title">Insight</div>
+                <div class="step-desc">Interactive dashboard for validating Moore's Law.</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
