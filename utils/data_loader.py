@@ -6,186 +6,83 @@ import os
 
 @st.cache_data
 def load_and_clean_data():
-    # === 1. 读取原始数据 ===
-    file_path = 'gpu_1986-2026.csv'
-    if not os.path.exists(file_path):
-        file_path = 'data/gpu_1986-2026.csv'
-    
+    # 1. 读取数据
+    file_path = 'gpu_1986-2026.csv' if os.path.exists('gpu_1986-2026.csv') else 'data/gpu_1986-2026.csv'
     try:
-        df = pd.read_csv(file_path, dtype=str)
-    except Exception as e:
-        st.error(f"Critical Error: Could not read dataset. {e}")
+        df = pd.read_csv(file_path, dtype=str).applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    except:
         return pd.DataFrame()
 
-    # === 2. “斩”：删除 CSV 中原有 5090 数据，防止干扰 ===
+    # 2. 删除旧 5090 数据 (防止干扰)
     df = df[~df['Name'].str.contains('GeForce RTX 5090', case=False, na=False)].copy()
 
-    # ==========================================
-    # 3. 清洗函数 (保持不变)
-    # ==========================================
-    def parse_transistors(val):
-        if pd.isna(val) or str(val).lower() == 'unknown': return np.nan
-        val_str = str(val).lower().replace(',', '').replace('"', '')
-        matches = re.findall(r"[\d\.]+", val_str)
+    # 3. 通用解析工具 (一行代码解决所有数字提取)
+    def extract_num(val, scale=1):
+        if pd.isna(val) or str(val).lower() in ['unknown', 'system shared']: return np.nan
+        s = str(val).lower().replace(',', '').replace('"', '')
+        matches = re.findall(r"[\d\.]+", s)
         if not matches: return np.nan
-        num = float(matches[0])
-        if 'billion' in val_str: return num * 1000
-        elif 'million' in val_str: return num
+        num = float(matches[0]) * scale
+        # 单位换算逻辑
+        if 'billion' in s or 'ghz' in s or 'tflops' in s or 'gb' in s: return num * 1000
+        if 'kb' in s or 'mb/s' in s: return num / 1024
         return num
 
-    def parse_die_size(val):
-        if pd.isna(val) or str(val).lower() == 'unknown': return np.nan
-        match = re.search(r"([\d\.]+)", str(val))
-        return float(match.group(1)) if match else np.nan
+    # 4. 批量应用清洗规则
+    clean_map = {
+        'Transistors_Million': ('Graphics Processor__Transistors', 1),
+        'Die_Size_mm2': ('Graphics Processor__Die Size', 1),
+        'Memory_MB': ('Memory__Memory Size', 1),
+        'TDP_Watts': ('Board Design__TDP', 1),
+        'Process_Size_nm': ('Graphics Processor__Process Size', 1),
+        'Bandwidth_GBs': ('Memory__Bandwidth', 1),
+        'FP32_GFLOPS': ('Theoretical Performance__FP32 (float)', 1),
+        'GPU_Clock_MHz': ('Clock Speeds__GPU Clock', 1),
+        'Launch_Price': ('Graphics Card__Launch Price', 1)
+    }
 
-    def parse_price(val):
-        if pd.isna(val): return np.nan
-        val_str = str(val).replace(',', '').replace('$', '') 
-        match = re.search(r"(\d+\.?\d*)", val_str)
-        return float(match.group(1)) if match else np.nan
-    
-    def parse_date(val):
-        if pd.isna(val) or str(val).lower() == 'unknown': return pd.NaT
-        val_clean = re.sub(r'(\d+)(st|nd|rd|th)', r'\1', str(val))
-        try:
-            return pd.to_datetime(val_clean)
-        except:
-            return pd.NaT
+    for new_col, (old_col, scale) in clean_map.items():
+        df[new_col] = df[old_col].apply(lambda x: extract_num(x, scale))
 
-    def parse_memory_size(val):
-        if pd.isna(val): return np.nan
-        val_str = str(val).lower()
-        matches = re.findall(r"[\d\.]+", val_str)
-        if not matches: return np.nan
-        num = float(matches[0])
-        if 'gb' in val_str: return num * 1024
-        elif 'mb' in val_str: return num
-        return num
+    # 日期单独处理
+    df['Release_Date'] = pd.to_datetime(df['Graphics Card__Release Date'].apply(
+        lambda x: re.sub(r'(\d+)(st|nd|rd|th)', r'\1', str(x)) if pd.notna(x) else pd.NaT
+    ), errors='coerce')
+    df['Release_Year'] = df['Release_Date'].dt.year.astype(float)
 
-    def parse_tdp(val):
-        if pd.isna(val): return np.nan
-        match = re.search(r"(\d+)", str(val))
-        return float(match.group(1)) if match else np.nan
-
-    def parse_process_size(val):
-        if pd.isna(val): return np.nan
-        match = re.search(r"(\d+)", str(val))
-        return float(match.group(1)) if match else np.nan
-
-    def parse_bandwidth(val):
-        if pd.isna(val): return np.nan
-        val_str = str(val).lower().replace(',', '')
-        matches = re.findall(r"[\d\.]+", val_str)
-        if not matches: return np.nan
-        num = float(matches[0])
-        if 'mb/s' in val_str: return num / 1024
-        return num 
-
-    def parse_gflops(val):
-        if pd.isna(val): return np.nan
-        val_str = str(val).lower().replace(',', '')
-        matches = re.findall(r"[\d\.]+", val_str)
-        if not matches: return np.nan
-        num = float(matches[0])
-        if 'tflops' in val_str: return num * 1000
-        return num
-
-    def parse_clock(val):
-        if pd.isna(val): return np.nan
-        val_str = str(val).lower().replace(',', '')
-        match = re.search(r"(\d+)", val_str)
-        if not match: return np.nan
-        num = float(match.group(1))
-        if 'ghz' in val_str: return num * 1000 
-        return num
-
-    # ==========================================
-    # 4. 应用清洗
-    # ==========================================
-    df_clean = df.copy()
-    df_clean['Transistors_Million'] = df_clean['Graphics Processor__Transistors'].apply(parse_transistors)
-    df_clean['Die_Size_mm2'] = df_clean['Graphics Processor__Die Size'].apply(parse_die_size)
-    df_clean['Launch_Price'] = df_clean['Graphics Card__Launch Price'].apply(parse_price)
-    df_clean['Release_Date'] = df_clean['Graphics Card__Release Date'].apply(parse_date)
-    
-    # 这里的 Year 默认为整数，后面我们会把它变成浮点数以支持微调
-    df_clean['Release_Year'] = df_clean['Release_Date'].dt.year.astype(float)
-    
-    df_clean['Memory_MB'] = df_clean['Memory__Memory Size'].apply(parse_memory_size)
-    df_clean['TDP_Watts'] = df_clean['Board Design__TDP'].apply(parse_tdp)
-    df_clean['Process_Size_nm'] = df_clean['Graphics Processor__Process Size'].apply(parse_process_size)
-    df_clean['Bandwidth_GBs'] = df_clean['Memory__Bandwidth'].apply(parse_bandwidth)
-    df_clean['FP32_GFLOPS'] = df_clean['Theoretical Performance__FP32 (float)'].apply(parse_gflops)
-    df_clean['GPU_Clock_MHz'] = df_clean['Clock Speeds__GPU Clock'].apply(parse_clock)
-
-    # ==========================================
-    # 5. “奏”：手动注入防重叠数据 (Jittered Data)
-    # ==========================================
-    # 关键修改：Release_Year 使用小数，让它们在图表X轴上错开！
-    
-    future_data = [
-        {
-            'Name': 'GeForce RTX 5090',
-            'Brand': 'NVIDIA',
-            'Graphics Processor__Architecture': 'Blackwell',
-            'Graphics Processor__Foundry': 'TSMC',
-            'Release_Year': 2025.05,         # ✅ 2025年初
-            'Transistors_Million': 92200.0,
-            'Die_Size_mm2': 750.0,
-            'Process_Size_nm': 5.0,
-            'TDP_Watts': 575.0,
-            'FP32_GFLOPS': 104800.0,
-            'Launch_Price': 1999.0,
-            'Memory_MB': 32768.0,
-            'Bandwidth_GBs': 1790.0,
-            'GPU_Clock_MHz': 2017.0
-        },
-        {
-            'Name': 'GeForce RTX 5090 D',
-            'Brand': 'NVIDIA',
-            'Graphics Processor__Architecture': 'Blackwell',
-            'Graphics Processor__Foundry': 'TSMC',
-            'Release_Year': 2025.20,         # ✅ 稍微往后一点，防止和标准版重叠
-            'Transistors_Million': 92200.0,
-            'Die_Size_mm2': 750.0,
-            'Process_Size_nm': 5.0,
-            'TDP_Watts': 575.0,
-            'FP32_GFLOPS': 104800.0,
-            'Launch_Price': 2299.0,          # 价格不同
-            'Memory_MB': 32768.0,
-            'Bandwidth_GBs': 1790.0,
-            'GPU_Clock_MHz': 2017.0
-        },
-        {
-            'Name': 'GeForce RTX 5090 D V2',
-            'Brand': 'NVIDIA',
-            'Graphics Processor__Architecture': 'Blackwell',
-            'Graphics Processor__Foundry': 'TSMC',
-            'Release_Year': 2025.65,         # ✅ 2025下半年 (V2版本)
-            'Transistors_Million': 92200.0,
-            'Die_Size_mm2': 750.0,
-            'Process_Size_nm': 5.0,
-            'TDP_Watts': 575.0,
-            'FP32_GFLOPS': 104800.0,
-            'Launch_Price': 2299.0,
-            'Memory_MB': 24576.0,            # 24GB
-            'Bandwidth_GBs': 1340.0,
-            'GPU_Clock_MHz': 2017.0
-        }
+    # 5. 手动注入 5090 数据 (Compact Version)
+    future_specs = [
+        ('GeForce RTX 5090', 2025.05, 1999.0),
+        ('GeForce RTX 5090 D', 2025.20, 2299.0),
+        ('GeForce RTX 5090 D V2', 2025.65, 2299.0)
     ]
     
-    df_future = pd.DataFrame(future_data)
-    df_clean = pd.concat([df_clean, df_future], ignore_index=True)
-
-    # ==========================================
-    # 6. 计算衍生指标
-    # ==========================================
-    df_clean['Transistor_Density'] = df_clean['Transistors_Million'] / df_clean['Die_Size_mm2']
-    df_clean['Perf_Per_Watt'] = df_clean['FP32_GFLOPS'] / df_clean['TDP_Watts']
-    df_clean['Cost_Per_Transistor'] = df_clean['Launch_Price'] / df_clean['Transistors_Million']
+    new_rows = []
+    for name, year, price in future_specs:
+        mem = 24576.0 if 'V2' in name else 32768.0
+        bw = 1340.0 if 'V2' in name else 1790.0
+        new_rows.append({
+            'Name': name, 'Brand': 'NVIDIA', 'Graphics Processor__Architecture': 'Blackwell',
+            'Graphics Processor__Foundry': 'TSMC', 'Release_Year': year, 'Launch_Price': price,
+            'Transistors_Million': 92200.0, 'Die_Size_mm2': 750.0, 'Process_Size_nm': 5.0,
+            'TDP_Watts': 575.0, 'FP32_GFLOPS': 104800.0, 'Memory_MB': mem, 
+            'Bandwidth_GBs': bw, 'GPU_Clock_MHz': 2235.0
+        })
     
-    if 'Graphics Processor__Foundry' not in df_clean.columns:
-        df_clean['Graphics Processor__Foundry'] = 'Unknown'
-    df_clean['Graphics Processor__Foundry'] = df_clean['Graphics Processor__Foundry'].fillna('Unknown')
+    df = pd.concat([df, pd.DataFrame(new_rows)], ignore_index=True)
 
-    return df_clean
+    # 6. 补全缺失值与计算衍生指标
+    df['Graphics Processor__Foundry'] = df['Graphics Processor__Foundry'].fillna('Unknown')
+    
+    # 2023+ 频率补全
+    avg_clocks = df.groupby(df['Release_Year'].fillna(0).astype(int))['GPU_Clock_MHz'].mean()
+    df['GPU_Clock_MHz'] = df.apply(
+        lambda r: avg_clocks.get(int(r['Release_Year']), 2000) if pd.isna(r['GPU_Clock_MHz']) and r['Release_Year'] >= 2020 else r['GPU_Clock_MHz'], 
+        axis=1
+    )
+
+    df['Transistor_Density'] = df['Transistors_Million'] / df['Die_Size_mm2']
+    df['Perf_Per_Watt'] = df['FP32_GFLOPS'] / df['TDP_Watts']
+    df['Cost_Per_Transistor'] = df['Launch_Price'] / df['Transistors_Million']
+
+    return df
