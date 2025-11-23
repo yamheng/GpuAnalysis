@@ -42,13 +42,13 @@ def show(df):
 
     # === 2. Tabs ===
     tab1, tab2 = st.tabs([
-    ":material/battery_android_frame_bolt: The Solution: Efficiency", 
-    ":material/destruction: The Problem: Power & Frequency"
+        ":material/battery_charging_full: The Solution: Efficiency", 
+        ":material/dangerous: The Problem: Power & Frequency"
     ])
 
     # --- Tab 1: Efficiency (保持完美状态) ---
     with tab1:
-        st.markdown("#### Solution: Getting smarter (GFLOPS per Watt)")
+        st.markdown("#### SOLUTION: GETTING SMARTER (GFLOPS PER WATT)")
         fig_eff = px.box(
             df_eff_filtered,
             x='Graphics Processor__Architecture',
@@ -60,33 +60,46 @@ def show(df):
             title="Efficiency Evolution: GFLOPS per Watt (Higher is Better)",
             height=500
         )
+        # 美化字体
+        fig_eff.update_layout(font=dict(family="Oswald, sans-serif"))
         st.plotly_chart(fig_eff, use_container_width=True)
         
         m_col1, m_col2, m_col3 = st.columns(3)
-        m_col1.metric("Peak Efficiency", f"{max_eff_val:.0f} GFLOPS/W", max_eff_name)
-        m_col2.metric("Ada Lovelace Leap", f"+{leap_pct:.0f}%", "vs Ampere")
+        m_col1.metric(":material/bolt: Peak Efficiency", f"{max_eff_val:.0f} GFLOPS/W", max_eff_name)
+        m_col2.metric(":material/trending_up: Ada Lovelace Leap", f"+{leap_pct:.0f}%", "vs Ampere")
         m_col3.info("Blackwell drops slightly as it optimizes for AI (FP8), not FP32.")
 
-    # --- Tab 2: Power Wall (修复混乱) ---
+    # --- Tab 2: Power Wall (核心修复区域) ---
     with tab2:
         # === Part A: 频率停滞 (Frequency Stagnation) ===
-        st.markdown("#### 1. The Cause: Frequency Stagnation")
+        st.markdown("#### 1. THE CAUSE: FREQUENCY STAGNATION")
         st.caption("Why do we need more power? Because we can't just increase clock speed anymore.")
         
-        # 计算每年的最大频率和平均频率
-        freq_trend = df.groupby('Release_Year')['GPU_Clock_MHz'].agg(['max', 'mean']).reset_index()
-        freq_trend = freq_trend[(freq_trend['Release_Year'] >= 1995) & (freq_trend['Release_Year'] <= 2026)]
+        # 1. 计算原始数据的年度趋势
+        raw_trend = df.groupby('Release_Year')['GPU_Clock_MHz'].agg(['max', 'mean']).reset_index()
         
+        # 2. 强制创建一个完整的年份表 (1995 - 2026)
+        # 这样不管原始数据里有没有2023、2024，X轴上都会有这些年份的位置
+        full_years = pd.DataFrame({'Release_Year': np.arange(1995, 2027)})
+        
+        # 3. 合并并进行插值填充 (Interpolate)
+        # merge 会让缺失年份的 max/mean 变成 NaN
+        freq_trend = pd.merge(full_years, raw_trend, on='Release_Year', how='left')
+        
+        # interpolate 会根据前后年份的数据，画一条直线补上空缺
+        freq_trend['max'] = freq_trend['max'].interpolate(method='linear', limit_direction='both')
+        freq_trend['mean'] = freq_trend['mean'].interpolate(method='linear', limit_direction='both')
+
         fig_clock = go.Figure()
 
-        # ❌ 删除了乱七八糟的散点背景，只画清晰的线
-        # Line 1: 最大频率 (Max)
+        # Line 1: 最大频率 (Max) - 加上 connectgaps=True 双重保险
         fig_clock.add_trace(go.Scatter(
             x=freq_trend['Release_Year'], y=freq_trend['max'],
             mode='lines+markers',
             name='Max Core Clock',
-            line=dict(color='#FF4B4B', width=4), # 红色粗线
-            marker=dict(color='#FF4B4B', size=6)
+            line=dict(color='#FF4B4B', width=4), 
+            marker=dict(color='#FF4B4B', size=6),
+            connectgaps=True  # ✅ 强制连线，绝不断裂
         ))
 
         # Line 2: 平均频率 (Avg)
@@ -94,7 +107,8 @@ def show(df):
             x=freq_trend['Release_Year'], y=freq_trend['mean'],
             mode='lines',
             name='Average Clock',
-            line=dict(color='grey', width=2, dash='dot')
+            line=dict(color='grey', width=2, dash='dot'),
+            connectgaps=True  # ✅ 强制连线
         ))
 
         # 标注
@@ -107,18 +121,19 @@ def show(df):
         fig_clock.update_layout(
             title="GPU Clock Speeds (MHz): Hitting the Ceiling",
             yaxis_title="MHz",
+            xaxis=dict(range=[1995, 2026]), # 强制X轴范围
             height=400,
-            hovermode="x unified"
+            hovermode="x unified",
+            font=dict(family="Oswald, sans-serif")
         )
         st.plotly_chart(fig_clock, use_container_width=True)
 
-        st.divider() # 分割线
+        st.divider() 
 
         # === Part B: 功耗激增 (TDP Explosion) ===
-        st.markdown("#### 2. The Consequence: Power Explosion (TDP)")
+        st.markdown("#### 2. THE CONSEQUENCE: POWER EXPLOSION (TDP)")
         st.caption("Since we can't make clocks faster, we add more cores, which explodes power consumption.")
         
-        # 准备 TDP 数据
         mask_clean = (
             (df_eff_filtered['TDP_Watts'] < 800) & 
             ~((df_eff_filtered['TDP_Watts'] > 350) & (df_eff_filtered['Release_Year'] < 2019))
@@ -135,13 +150,11 @@ def show(df):
 
         fig_tdp = go.Figure()
 
-        # 300W 红线
         fig_tdp.add_hline(
             y=300, line_dash="dash", line_color="red", 
             annotation_text="🛑 Old 300W Limit", annotation_position="bottom right"
         )
 
-        # Max Power
         fig_tdp.add_trace(go.Scatter(
             x=tdp_stats['Graphics Processor__Architecture'], 
             y=tdp_stats['max'],
@@ -151,7 +164,6 @@ def show(df):
             marker=dict(size=8, symbol='diamond')
         ))
 
-        # Avg Power
         fig_tdp.add_trace(go.Scatter(
             x=tdp_stats['Graphics Processor__Architecture'], 
             y=tdp_stats['mean'],
@@ -164,7 +176,8 @@ def show(df):
             title="Power Consumption (TDP) Trends",
             yaxis_title="Watts",
             height=400,
-            hovermode="x unified"
+            hovermode="x unified",
+            font=dict(family="Oswald, sans-serif")
         )
         
         st.plotly_chart(fig_tdp, use_container_width=True)
