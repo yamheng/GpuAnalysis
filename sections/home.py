@@ -3,12 +3,12 @@ from utils.ui import load_css
 
 def show(df):
     
-    # 2. 主标题
-    st.markdown("# GPU EVOLUTION: A DATA STORY")
-    st.markdown("### ANALYZING THE LIMITS OF SILICON PHYSICS & ECONOMICS")
+    # Main Title
+    st.markdown("# GPU EVOLUTION INSIGHT(1986-2026)")
+    st.markdown("### &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;————The Twilight of Moore's Law")
     st.markdown("---")
 
-    # 3. 核心内容区
+    # Main Title
     col1, col2 = st.columns([2, 1])
     
     with col1:
@@ -22,21 +22,21 @@ def show(df):
         * **ECONOMIC WALL:** Why computing is getting expensive again.
         """)
         
-        st.info("**START:** CLICK 'ANALYSIS TOOLS' IN THE TOP MENU.", icon=":material/line_start_arrow:")
+        st.info("**START:** CLICK 'ANALYSIS TOOLS' IN THE TOP MENU.", icon=":material/call_made:")
 
     with col2:
         st.markdown("### :material/query_stats: STATS")
-        # Metric 会自动适配我们的黑白 CSS，看起来非常酷
+        # Here I attempted to use Metric to automatically adapt black and white CSS and add some visual effects.
         st.metric("TOTAL GPUs", len(df))
         st.metric("TIME SPAN", "1986 - 2026")
         st.metric("VENDORS", f"{df['Brand'].nunique()}")
 
-    # 4. 替代 Graphviz 的“数字流程卡片”
+    # "Digital Process Cards" as an alternative to Graphviz
     st.markdown("---")
     st.markdown("### :material/azm: METHODOLOGY")
     
-    # 使用 HTML/CSS 创建 4 列纯 CSS 卡片，不使用任何图片或 Emoji
-    # 这段 HTML 代码会生成 4 个带边框的盒子，里面有巨大的数字编号
+    # Create 4 columns of pure CSS cards using HTML/CSS,
+    # It will also generate 4 boxes with borders, each containing a huge numbered label.
     st.markdown("""
     <style>
     .step-card {
@@ -55,7 +55,7 @@ def show(df):
         font-family: 'Oswald', sans-serif;
         font-size: 40px;
         font-weight: bold;
-        opacity: 0.3; /* 数字半透明，显高级 */
+        opacity: 0.3; 
         margin-bottom: 10px;
     }
     .step-title {
@@ -70,7 +70,7 @@ def show(df):
         font-size: 14px;
         line-height: 1.4;
     }
-    /* 悬停时数字变白 */
+    /* The numbers turn white when hovered over */
     .step-card:hover .step-num { color: white; opacity: 0.8; }
     </style>
 

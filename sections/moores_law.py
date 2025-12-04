@@ -6,7 +6,7 @@ def show(df):
     st.markdown("## :material/ssid_chart: Moore's Law (Physical Limits)")
     st.markdown("### Chapter 1: The Physical Wall")
     
-    # 1. 过滤器
+    # Filter
     with st.expander("Filter Settings", expanded=False, icon=":material/shield_locked:"):
         foundries = df['Graphics Processor__Foundry'].unique()
         sel_foundry = st.multiselect("FOUNDRY", foundries, default=['TSMC', 'Samsung', 'Intel', 'GlobalFoundries', 'UMC'])
@@ -14,7 +14,7 @@ def show(df):
 
     df_sub = df[df['Graphics Processor__Foundry'].isin(sel_foundry) & (df['Release_Year'] > 1990)].copy()
     
-    # 2. 绘图函数化 (减少代码重复)
+    # 2. Functionalize the plotting functions to reduce code duplication
     def plot_scatter(data, x, y, color_map, title, y_log=False):
         fig = go.Figure()
         for f in sel_foundry:
@@ -27,11 +27,11 @@ def show(df):
             ))
         return fig
 
-    # 图 1: 晶体管密度
+    # Figure 1: Transistor Density
     cmap = {'TSMC':'#FF6347', 'Samsung':'#32CD32', 'Intel':"#1D5DBC", 'GlobalFoundries':'#911EB4', 'UMC':"#EEF10F"}
     fig1 = plot_scatter(df_sub, 'Release_Year', 'Transistor_Density', cmap, "Density")
     
-    # 添加工艺制程线 (右轴)
+    # Add process line (right axis)
     trend = df_sub.groupby('Release_Year')['Process_Size_nm'].min().reset_index()
     fig1.add_trace(go.Scatter(x=trend['Release_Year'], y=trend['Process_Size_nm'], name='Process Node (nm)', 
                              line=dict(color='black', width=3, dash='dot'), yaxis='y2'))
@@ -46,49 +46,55 @@ def show(df):
     fig1.update_layout(
         title="Transistor Density vs Process Node", 
         yaxis_type="log", 
-        # ✅ 修复1: 添加坐标轴标签
+        # Axis labels can be placed here
         xaxis=dict(title="Release Year"),
         yaxis=dict(title="Transistor Density (M/mm²) - Log Scale"),
         yaxis2=dict(
             overlaying='y', 
             side='right', 
             autorange="reversed",
-            title="Process Node (nm)" # 右轴标签
+            title="Process Node (nm)" # Right axis label
         ), 
         height=600, 
         font=dict(family="Oswald"),
-        # ✅ 修复2: 减少上下留白 (t=top, b=bottom)
+        # Reduce the top and bottom margins(t=top, b=bottom)
         margin=dict(t=50, b=50, l=60, r=60) 
     )
     st.plotly_chart(fig1, use_container_width=True)
 
     st.divider()
 
-    # 图 2: Die Size (Chiplet 标注)
+    # Figure 2: Die Size (Chiplet star)
     st.markdown("### :material/shield_locked: The Physical Wall: Reticle Limit vs. Chiplets")
     st.markdown("Standard chips hit the wall at ~858mm². Points above this line use **Chiplet (MCM)** technology.")
     fig2 = go.Figure()
     
-    # 普通点
+    # Ordinary point
     d_die = df.dropna(subset=['Die_Size_mm2'])
     fig2.add_trace(go.Scatter(x=d_die['Release_Year'], y=d_die['Die_Size_mm2'], mode='markers', name='Single Die', 
-                             marker=dict(color='black', opacity=0.3)))
+                             marker=dict(color='black', opacity=0.3),
+    text=d_die['Name'],
+        hovertemplate="<b>%{text}</b><br>Size: %{y} mm²<br>Year: %{x}<extra></extra>"
+    ))
     
-    # Chiplet 点 (>858mm2)
+    # Chiplet point (>858mm2)
     d_big = d_die[d_die['Die_Size_mm2'] > 858]
     fig2.add_trace(go.Scatter(x=d_big['Release_Year'], y=d_big['Die_Size_mm2'], mode='markers', name='Chiplet/MCM', 
-                             marker=dict(color='red', symbol='star', size=10)))
+                             marker=dict(color='red', symbol='star', size=10),
+    text=d_big['Name'],
+        hovertemplate="<b>%{text}</b><br>Size: %{y} mm²<br>Tech: Chiplet/MCM<extra></extra>"
+    ))                         
     
     fig2.add_hline(y=858, line=dict(color='red', dash='dash'), annotation_text="Reticle Limit")
     
     fig2.update_layout(
         title="Die Size Evolution", 
-        # ✅ 修复1: 添加坐标轴标签
+        # Used to add axis labels
         xaxis=dict(title="Release Year"),
         yaxis=dict(title="Die Size (mm²)"),
         height=500, 
         font=dict(family="Oswald"),
-        # ✅ 修复2: 减少上下留白
+        # Reduce the top and bottom margins
         margin=dict(t=50, b=50, l=60, r=60)
     )
     st.plotly_chart(fig2, use_container_width=True)

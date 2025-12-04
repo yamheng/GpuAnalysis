@@ -1,4 +1,4 @@
-# 文件路径: sections/data_info.py
+# for data clean
 import streamlit as st
 import pandas as pd
 
@@ -9,7 +9,7 @@ def show(df):
     st.markdown("### 1. Handling Missing Data (The 'Unknown' Problem)")
     st.markdown("The first few rows (1986 era) contain many 'unknown' values. Our cleaning logic correctly converts them to `NaN` (None) to prevent errors.")
 
-    # 读取原始数据用于对比 (尝试从 data 文件夹或根目录读取)
+    # Read the original data for comparison (try to read from the data folder or root directory)
     try:
         df_raw = pd.read_csv('data/gpu_1986-2026.csv')
     except FileNotFoundError:
@@ -19,7 +19,7 @@ def show(df):
             st.error("Raw CSV file not found for comparison.")
             return
 
-    # 展示前 5 行（验证清洗逻辑是否生效）
+    # Show the first 5 lines (to verify if the cleaning logic works)
     col1, col2 = st.columns(2)
     with col1:
         st.caption("Raw Data (Head): Note the 'unknown' strings")
@@ -31,9 +31,9 @@ def show(df):
     st.markdown("---")
     st.markdown("### 2. Verifying Modern Data (It Works!)")
     
-    # 展示 2023 年以后的 5 行数据
+    # Show 5 rows of data from 2023 onwards
     df_modern = df[df['Release_Year'] > 2023].head(5)
-    # 对应的原始数据索引
+    # Corresponding original data index
     if not df_modern.empty:
         df_raw_modern = df_raw.iloc[df_modern.index]
         

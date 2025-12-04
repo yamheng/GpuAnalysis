@@ -1,13 +1,13 @@
-# 文件路径: app.py
+# 求你了别报错能运行别中断
 import streamlit as st
 from utils.data_loader import load_and_clean_data
 from utils.ui import load_css, render_sidebar_info
 from sections import home, data_info, moores_law, efficiency, memory_wall, market_ai, economic, contact
 
-# 1. 页面配置
+# 1. Page Configuration
 st.set_page_config(
     page_title="GPU-FINDER",
-    page_icon="▪️", # 换成一个极简的几何图形，或者干脆不设
+    page_icon="▪️", # Replace the original Streamlit icon with this icon that looks a bit like a chip.
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -15,16 +15,16 @@ st.set_page_config(
 if 'current_page' not in st.session_state:
     st.session_state['current_page'] = 'Home'
 
-# 2. 加载资源 & 侧边栏
+# 2. Loading Resources & Sidebar
 load_css()
 df = load_and_clean_data()
 render_sidebar_info()
 
-# 3. 顶部导航栏 (去掉了 Emoji，纯文字)
+# 3. Top navigation bar
 col_nav1, col_nav2, col_nav3 = st.columns([1, 1, 1])
 
 with col_nav1:
-    # 只保留大写英文，配合 Oswald 字体非常有力
+    # Keeping only uppercase English, it's very cool with the Oswald font.
     if st.button("HOME", use_container_width=True, 
                  type="primary" if st.session_state['current_page'] == 'Home' else "secondary"):
         st.session_state['current_page'] = 'Home'
@@ -44,7 +44,7 @@ with col_nav3:
 
 st.markdown("---")
 
-# 4. 页面路由
+# 4. Page routing
 if st.session_state['current_page'] == 'Home':
     home.show(df)
 
@@ -52,7 +52,7 @@ elif st.session_state['current_page'] == 'Tools':
     st.markdown("## ANALYSIS DASHBOARD")
     st.markdown("Explore the evolution of GPUs through different lenses.")
     
-    # Tabs 也不要 Emoji，直接用大写标题
+    # Tabs also directly use uppercase titles
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "DATA INFO", 
         "MOORE'S LAW", 

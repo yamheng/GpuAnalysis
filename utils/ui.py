@@ -3,7 +3,7 @@ import streamlit as st
 def load_css():
     st.markdown("""
         <style>
-        /* --- 1. 引入 Google Fonts --- */
+        /* 1. Introduce Google Fonts */
         @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Roboto:wght@300;400;700&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
         
@@ -14,7 +14,7 @@ def load_css():
             margin-right: 8px;
         }
         
-        /* --- 2. 全局设置 --- */
+        /* 2. Global Settings */
         html, body, [class*="css"] {
             font-family: 'Roboto', sans-serif;
             color: black;
@@ -30,7 +30,7 @@ def load_css():
             border-radius: 0px !important;
         }
         
-        /* --- 3. 顶部导航条 --- */
+        /* 3. Top Navigation Bar */
         .stButton button {
             width: 100%;
             border: 2px solid #000000;
@@ -55,26 +55,26 @@ def load_css():
             box-shadow: 5px 5px 0px rgba(0,0,0,1);
         }
 
-        /* --- 4. 侧边栏 --- */
+        /* 4. Sidebar */
         section[data-testid="stSidebar"] {
             background-color: #FFFFFF;
             border-right: 3px solid #000000;
         }
         
-        /* --- 5. Logo 灰度处理 (新加功能) --- */
-        /* 针对侧边栏底部的合作 Logo，让它们默认变成黑白，融入主题 */
+        /* 5. Logo Grayscale Processing (test) */
+        /* For the school logos at the bottom of the sidebar, set them to be black and white by default so that they better match the theme color. */
         [data-testid="stSidebar"] [data-testid="column"] img {
             filter: grayscale(100%);
             opacity: 0.7;
             transition: filter 0.3s, opacity 0.3s;
         }
-        /* 鼠标悬停时恢复彩色 (可选) */
+        /* Restore color when mouse hovers (test also) */
         [data-testid="stSidebar"] [data-testid="column"] img:hover {
             filter: grayscale(0%);
             opacity: 1;
         }
 
-        /* --- 6. 隐藏多余元素 --- */
+        /* 6. Hide redundant elements to make the interface cleaner */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         header {visibility: hidden;}
@@ -85,9 +85,9 @@ def load_css():
     """, unsafe_allow_html=True)
 
 def render_sidebar_info():
-    """侧边栏：只展示个人信息"""
+    # Sidebar: Only display personal information
     with st.sidebar:
-        # 1. Logo 区域
+        # 1. The topmost Logo area
         try:
             st.image("assets/logo.png", use_container_width=True)
         except:
@@ -99,23 +99,24 @@ def render_sidebar_info():
         
         st.markdown("---")
         
-        # 2. 个人信息 (已修改)
+        # 2. Personal Information
         st.markdown("### :material/person: STUDENT INFO")
         st.markdown("""
         **NAME:** Ruichen Liu (刘睿琛)
         **EMAIL:** ruichen.liu@efrei.net
-        **SCHOOL:** EFREI Paris
+        **SCHOOL:** EFREI Paris &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        **COURSE:** Data Visualization &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2025
         """)
 
         st.markdown("### :material/supervisor_account: SUPERVISOR")
         st.markdown("""
         **PROF.** Mano Joseph Mathew
-        **EMAIL:** mano.mathew@efrei.fr
+        **LinkedIn:** https://www.linkedin.com/in/manomathew/
         """)
         
         st.markdown("---")
         
-        # 3. 按钮 (Resources)
+        # 3. Button (Resources)
         st.markdown("### :material/link: RESOURCES")
         st.markdown("""
         <a href="https://github.com" target="_blank" style="text-decoration:none;">
@@ -135,13 +136,13 @@ def render_sidebar_info():
 
         st.markdown("---")
 
-        # 4. 合作机构 Logo (新加部分)
-        # 放在最底部，双列布局，利用 CSS 滤镜自动变黑白
+        # 4. School Logo
+        # Place it at the bottom, using a two-column layout, and automatically turn it black and white with CSS filters (it seems there's a problem...)
         st.markdown("### :material/verified: AFFILIATIONS")
         col_logo1, col_logo2 = st.columns(2)
         
         with col_logo1:
-            # 确保 assets 文件夹里有这个文件
+            # Make sure this file is in the assets folder.
             st.image("assets/logo_efrei.png", use_container_width=True)
         with col_logo2:
             st.image("assets/logo_WUT.png", use_container_width=True)
